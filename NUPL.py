@@ -48,7 +48,7 @@ if st.session_state.reactor_scram:
         st.session_state.reactor_scram = False
         st.rerun()
 
-# Caso 2: El usuario inició el protocolo pero debe confirmar leyendo los peligros primero
+# Caso 2: El usuario inició el protocolo pero debe confirmar leyendo los peligros y colocando la clave
 elif st.session_state.scram_requested:
     with st.container(border=True):
         st.markdown("### ☢️⚠️ Peligros Críticos de Detener el Reactor (SCRAM)")
@@ -64,14 +64,29 @@ elif st.session_state.scram_requested:
         
         col_yes, col_no = st.columns(2)
         with col_yes:
-            if st.button("🛑 SÍ, ENCLAVAR BARRAS (PROCEDER)", type="primary", use_container_width=True):
+            btn_si = st.button("🛑 SÍ, ENCLAVAR BARRAS (PROCEDER)", type="primary", use_container_width=True)
+        with col_no:
+            btn_no = st.button("🟢 NO, ABORTAR Y MANTENER REACCIÓN", use_container_width=True)
+            
+        # Solicitud de la clave del encargado
+        password = st.text_input(
+            "🔑 Contraseña del Encargado del Reactor:", 
+            type="password", 
+            help="Se requiere la credencial del supervisor de turno para validar esta maniobra crítica."
+        )
+        
+        # Validación lógica post-interacción
+        if btn_si:
+            if password == "912":
                 st.session_state.reactor_scram = True
                 st.session_state.scram_requested = False
                 st.rerun()
-        with col_no:
-            if st.button("🟢 NO, ABORTAR Y MANTENER REACCIÓN", use_container_width=True):
-                st.session_state.scram_requested = False
-                st.rerun()
+            else:
+                st.error("❌ **AUTORIZACIÓN DENEGADA:** Contraseña incorrecta. El sistema de enclavamiento bloqueó la orden SCRAM por falta de credenciales válidas.")
+                
+        if btn_no:
+            st.session_state.scram_requested = False
+            st.rerun()
 
 # Caso 3: Estado operativo normal (reactor encendido)
 else:
