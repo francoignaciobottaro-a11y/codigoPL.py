@@ -150,6 +150,7 @@ st.write("")
 st.subheader("🏆 3. Conclusión Estratégica")
 
 candidatos_fiables = [r for r in resultados_evaluacion if r["_fiable"]]
+candidatos_fallo = [r for r in resultados_evaluacion if not r["_fiable"]]
 
 if candidatos_fiables:
     mejor = max(candidatos_fiables, key=lambda x: x["Energía Pura"])
@@ -163,3 +164,17 @@ if candidatos_fiables:
         m_col3.metric("Residuos Generados", f"{mejor['Residuos Puros']} kg", f"Máx: {limite_residuos} kg", delta_color="inverse")
 else:
     st.error("☢️🚨 **ALERTA CRÍTICA DEL REACTOR:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de colapso o superan las restricciones.")
+
+# --- NUEVA SECCIÓN: REPORTE DETALLADO DE FALLOS ---
+if candidatos_fallo:
+    st.write("")
+    st.markdown("### ⚠️ Reporte de Inestabilidad y Riesgo Nuclear")
+    
+    # Iteramos sobre cada material que falló para explicar las causas
+    for material in candidatos_fallo:
+        exceso_energia = material["Energía Pura"] - umbral_fallo
+        st.warning(
+            f"☢️ **{material['Combustible']}** ha provocado un **Fallo Crítico por Sobrecarga**.\n\n"
+            f"* **Causa técnica:** La energía proyectada de **{material['Energía Pura']:,} MWh** excede el umbral de seguridad térmica configurado (**{umbral_fallo:,} MWh**).\n"
+            f"* **Gravedad del exceso:** Requiere una disipación de emergencia de **+{exceso_energia:,} MWh** para estabilizar el núcleo."
+        )
