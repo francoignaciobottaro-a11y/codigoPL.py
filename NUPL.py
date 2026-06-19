@@ -41,8 +41,12 @@ with st.expander("📖 Información del Sistema: ¿Para qué sirve y qué proble
 # --- SECCIÓN DE CONTROL DE EMERGENCIA (SCRAM Y CONFIRMACIÓN) ---
 st.error("🚨 **SISTEMA DE CONTENCIÓN DE EMERGENCIA**")
 
-# Caso 1: El reactor ya fue apagado
+# Caso 1: El reactor ya fue apagado (ALARMA DE EVACUACIÓN ACTIVADA)
 if st.session_state.reactor_scram:
+    st.error("🚨 🔊 **ALERTA DE EVACUACIÓN INMEDIATA - CÓDIGO ROJO** 🔊 🚨")
+    st.markdown("""
+    > 🏃‍♂️💨 **PROTOCOLO DE INCIDENTES CRÍTICOS:** Todo el personal no esencial debe evacuar el sector de contención primaria de manera ordenada y dirigirse inmediatamente a los búnkeres térmicos subterráneos. Las sirenas de la planta han sido enlazadas automáticamente debido al cese de la refrigeración principal.
+    """)
     st.markdown("⚠️ **EL REACTOR SE ENCUENTRA APAGADO FORZOSAMENTE.** Las barras de control de neutrones se insertaron por completo.")
     if st.button("🔄 REINICIAR Y REENFOCAR NÚCLEO", use_container_width=True):
         st.session_state.reactor_scram = False
@@ -60,7 +64,7 @@ elif st.session_state.scram_requested:
         * **3. Choque y Estrés Térmico Estructural:** Pasar de miles de grados Celsius a temperaturas frías de contención en pocos segundos contrae violentamente el acero de la vasija de presión. Este choque térmico severo puede inducir **microfisuras y fracturas estructurales catastróficas** en las tuberías primarias del refrigerante.
         """)
         
-        st.warning("🖥️ **PANTALLA DE CONTROL:** ¿Está completamente seguro de proceder con la parada forzada del núcleo?")
+        st.warning("🖥️ **PANTALLA DE CONTROL:** ¿Está completamente seguro de proceder con la parada forzada del núcleo? **Nota: Esto disparará las alarmas de evacuación de la planta.**")
         
         col_yes, col_no = st.columns(2)
         with col_yes:
