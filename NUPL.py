@@ -8,6 +8,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- INICIALIZACIÓN DEL ESTADO DEL REACTOR ---
+if "reactor_scram" not in st.session_state:
+    st.session_state.reactor_scram = False
+
 # --- ESTILO Y ENCABEZADO ---
 st.title("⚛️ Centro de Evaluación de Combustibles Nucleares")
 st.markdown(
@@ -32,6 +36,38 @@ with st.expander("📖 Información del Sistema: ¿Para qué sirve y qué proble
     3. **Seguridad Térmica (Umbral de Fallo):** La energía máxima que el sistema de refrigeración puede contener antes de sufrir un colapso o fallo crítico.
     """)
 
+# --- SECCIÓN DE CONTROL DE EMERGENCIA (SCRAM) ---
+st.error("🚨 **SISTEMA DE CONTENCIÓN DE EMERGENCIA**")
+col_btn1, col_btn2 = st.columns([2, 5])
+
+with col_btn1:
+    if not st.session_state.reactor_scram:
+        if st.button("🔴 BOTÓN DE PARADA DE EMERGENCIA (SCRAM)", use_container_width=True, type="primary"):
+            st.session_state.reactor_scram = True
+            st.rerun()
+    else:
+        if st.button("🔄 REINICIAR Y REENFOCAR NÚCLEO", use_container_width=True):
+            st.session_state.reactor_scram = False
+            st.rerun()
+
+with col_btn2:
+    if st.session_state.reactor_scram:
+        st.markdown("⚠️ **EL REACTOR SE ENCUENTRA APAGADO FORZOSAMENTE.** Las barras de control de neutrones se insertaron por completo.")
+    else:
+        st.markdown("🟢 **EL REACTOR OPERA NORMALMENTE.** El botón SCRAM cortará la fisión inmediatamente en caso de anomalía irreversible.")
+
+# --- CARTEL DE PELIGROS DE DETENER EL REACTOR ---
+if st.session_state.reactor_scram:
+    with st.container(border=True):
+        st.markdown("### ☢️⚠️ Peligros Críticos de Detener el Reactor (SCRAM)")
+        st.markdown("""
+        Apagar un reactor nuclear de forma abrupta mediante un protocolo SCRAM introduce **riesgos térmicos y químicos extremos** que el equipo de ingeniería debe gestionar bajo estricto control:
+        
+        * **1. Calor de Decaimiento (Decay Heat):** Aunque la fisión en cadena se detenga al 0%, los materiales radiactivos acumulados dentro del combustible siguen descomponiéndose y **generando un calor masivo residual**. Si las bombas de refrigeración de emergencia fallan tras el apagado, el núcleo se derretirá por completo (el escenario exacto que causó el desastre de **Fukushima**).
+        * **2. Envenenamiento por Xenón (Poison Pit):** Al detenerse el flujo de neutrones, el reactor comienza a acumular cantidades críticas de **Xenón-135**, un Isótopo que devora neutrones. Esto "envenena" el reactor de tal forma que vuelve **matemáticamente imposible reiniciar el sistema** durante las siguientes 48 a 72 horas, dejando a la red eléctrica sin suministro.
+        * **3. Choque y Estrés Térmico Estructural:** Pasar de miles de grados Celsius a temperaturas frías de contención en pocos segundos contrae violentamente el acero de la vasija de presión. Este choque térmico severo puede inducir **microfisuras y fracturas estructurales catastróficas** en las tuberías primarias del refrigerante.
+        """)
+
 # --- PANEL LATERAL (RESTRICCIONES GLOBALES) ---
 st.sidebar.header("⚙️ Restricciones del Sistema")
 umbral_fallo = st.sidebar.number_input(
@@ -50,6 +86,7 @@ limite_residuos = st.sidebar.slider(
 )
 
 # --- CUERPO PRINCIPAL: CONFIGURACIÓN EN TARJETAS ---
+st.write("")
 st.subheader("⚡ 1. Parámetros de los Materiales")
 
 combustibles = ["Uranio Enriquecido", "MOX", "Torio"]
@@ -69,34 +106,42 @@ for i, fuel in enumerate(combustibles):
             def_l = 30 if i == 0 else (40 if i == 1 else 50)
             
             # Inputs interactivos
-            e = st.number_input("Energía (MWh/kg)", value=def_e, key=f"e_{fuel}", step=500)
-            r = st.number_input("Residuos (kg/kg)", value=def_r, key=f"r_{fuel}", step=1)
-            l = st.slider("Límite Físico (Masa Máx kg)", min_value=5, max_value=150, value=def_l, key=f"l_{fuel}")
+            e = st.number_input("Energía (MWh/kg)", value=def_e, key=f"e_{fuel}", step=500, disabled=st.session_state.reactor_scram)
+            r = st.number_input("Residuos (kg/kg)", value=def_r, key=f"r_{fuel}", step=1, disabled=st.session_state.reactor_scram)
+            l = st.slider("Límite Físico (Masa Máx kg)", min_value=5, max_value=150, value=def_l, key=f"l_{fuel}", disabled=st.session_state.reactor_scram)
             
             # --- LÓGICA DE EVALUACIÓN INMEDIATA ---
-            if r > 0:
-                max_por_residuos = limite_residuos // r
+            if st.session_state.reactor_scram:
+                kg_usados = 0
+                energia_generada = 0
+                residuos_generados = 0
+                es_fiable = True
+                estado = "🛑 APAGADO (SCRAM)"
+                st.info("🛑 Combustible inerte por parada técnica.")
             else:
-                max_por_residuos = l
+                if r > 0:
+                    max_por_residuos = limite_residuos // r
+                else:
+                    max_por_residuos = l
+                    
+                kg_usados = min(l, max_por_residuos)
+                energia_generada = kg_usados * e
+                residuos_generados = kg_usados * r
+                es_fiable = energia_generada <= umbral_fallo
                 
-            kg_usados = min(l, max_por_residuos)
-            energia_generada = kg_usados * e
-            residuos_generados = kg_usados * r
-            es_fiable = energia_generada <= umbral_fallo
-            
-            # --- FEEDBACK ESTÉTICO INSTANTÁNEO ---
-            if not es_fiable:
-                exceso = energia_generada - umbral_fallo
-                st.error(f"☢️ **FALLO CRÍTICO: PELIGRO NUCLEAR**\n\nGenerando **{energia_generada:,} MWh** (Excede el umbral por {exceso:,} MWh). Reduzca la masa o la energía por kg.")
-                estado = "☢️ FALLO CRÍTICO"
-            else:
-                st.success(f"🟢 **SISTEMA ESTABLE**\n\nGeneración segura a {energia_generada:,} MWh.")
-                estado = "🟢 OPERATIVO"
+                # --- FEEDBACK ESTÉTICO INSTANTÁNEO ---
+                if not es_fiable:
+                    exceso = energia_generada - umbral_fallo
+                    st.error(f"☢️ **FALLO CRÍTICO: PELIGRO NUCLEAR**\n\nGenerando **{energia_generada:,} MWh** (Excede el umbral por {exceso:,} MWh). Reduzca la masa o la energía por kg.")
+                    estado = "☢️ FALLO CRÍTICO"
+                else:
+                    st.success(f"🟢 **SISTEMA ESTABLE**\n\nGeneración segura a {energia_generada:,} MWh.")
+                    estado = "🟢 OPERATIVO"
 
             # Guardamos los datos para los gráficos y tablas posteriores
             resultados_evaluacion.append({
                 "Combustible": fuel,
-                "Masa Utilizada": f"{kg_usados} / {l} kg",
+                "Masa Utilizada": f"{kg_usados} / {l} kg" if not st.session_state.reactor_scram else "0 kg",
                 "Residuos Puros": residuos_generados,
                 "Energía Pura": energia_generada,
                 "Estado": estado,
@@ -114,7 +159,6 @@ col_tabla, col_grafico = st.columns([5, 4], gap="large")
 with col_tabla:
     df_resultados = pd.DataFrame(resultados_evaluacion)
     
-    # Renderizado estético de la tabla usando column_config
     st.dataframe(
         df_resultados[["Combustible", "Masa Utilizada", "Residuos Puros", "Energía Pura", "Estado"]],
         column_config={
@@ -137,7 +181,6 @@ with col_tabla:
     )
 
 with col_grafico:
-    # Preparación de datos rápida para el gráfico nativo
     df_chart = pd.DataFrame({
         "Combustible": combustibles,
         "Energía (MWh)": [r["Energía Pura"] for r in resultados_evaluacion]
@@ -149,32 +192,34 @@ with col_grafico:
 st.write("")
 st.subheader("🏆 3. Conclusión Estratégica")
 
-candidatos_fiables = [r for r in resultados_evaluacion if r["_fiable"]]
-candidatos_fallo = [r for r in resultados_evaluacion if not r["_fiable"]]
-
-if candidatos_fiables:
-    mejor = max(candidatos_fiables, key=lambda x: x["Energía Pura"])
-    
-    with st.container(border=True):
-        st.success(f"### El combustible más eficiente y seguro es el **{mejor['Combustible']}**")
-        
-        m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("Energía Desplegada", f"{mejor['Energía Pura']:,} MWh")
-        m_col2.metric("Masa Requerida", f"{mejor['_kg_usados']} kg", f"Límite: {mejor['_capacidad']} kg", delta_color="inverse")
-        m_col3.metric("Residuos Generados", f"{mejor['Residuos Puros']} kg", f"Máx: {limite_residuos} kg", delta_color="inverse")
+if st.session_state.reactor_scram:
+    st.info("🛑 **MONITOR INACTIVO:** El reactor está completamente apagado. No se pueden calcular eficiencias hasta reestablecer la reacción nuclear.")
 else:
-    st.error("☢️🚨 **ALERTA CRÍTICA DEL REACTOR:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de peligro nuclear crítico.")
+    candidatos_fiables = [r for r in resultados_evaluacion if r["_fiable"]]
+    candidatos_fallo = [r for r in resultados_evaluacion if not r["_fiable"]]
 
-# --- SECCIÓN: REPORTE DETALLADO DE FALLOS ---
-if candidatos_fallo:
-    st.write("")
-    st.markdown("### ⚠️ Reporte de Inestabilidad y Riesgo Nuclear")
-    
-    # Iteramos sobre cada material que falló para explicar las causas
-    for material in candidatos_fallo:
-        exceso_energia = material["Energía Pura"] - umbral_fallo
-        st.warning(
-            f"☢️ **{material['Combustible']}** ha provocado un **Fallo Crítico por Sobrecarga Térmica**.\n\n"
-            f"* **Causa técnica:** La energía proyectada de **{material['Energía Pura']:,} MWh** excede el umbral de seguridad configurado (**{umbral_fallo:,} MWh**).\n"
-            f"* **Gravedad del exceso:** Requiere una disipación de emergencia de **+{exceso_energia:,} MWh** para estabilizar el núcleo y evitar una fusión nuclear masiva."
-        )
+    if candidatos_fiables:
+        mejor = max(candidatos_fiables, key=lambda x: x["Energía Pura"])
+        
+        with st.container(border=True):
+            st.success(f"### El combustible más eficiente y seguro es el **{mejor['Combustible']}**")
+            
+            m_col1, m_col2, m_col3 = st.columns(3)
+            m_col1.metric("Energía Desplegada", f"{mejor['Energía Pura']:,} MWh")
+            m_col2.metric("Masa Requerida", f"{mejor['_kg_usados']} kg", f"Límite: {mejor['_capacidad']} kg", delta_color="inverse")
+            m_col3.metric("Residuos Generados", f"{mejor['Residuos Puros']} kg", f"Máx: {limite_residuos} kg", delta_color="inverse")
+    else:
+        st.error("☢️🚨 **ALERTA CRÍTICA DEL REACTOR:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de peligro nuclear crítico.")
+
+    # --- SECCIÓN: REPORTE DETALLADO DE FALLOS ---
+    if candidatos_fallo:
+        st.write("")
+        st.markdown("### ⚠️ Reporte de Inestabilidad y Riesgo Nuclear")
+        
+        for material in candidatos_fallo:
+            exceso_energia = material["Energía Pura"] - umbral_fallo
+            st.warning(
+                f"☢️ **{material['Combustible']}** ha provocado un **Fallo Crítico por Sobrecarga Térmica**.\n\n"
+                f"* **Causa técnica:** La energía proyectada de **{material['Energía Pura']:,} MWh** excede el umbral de seguridad configurado (**{umbral_fallo:,} MWh**).\n"
+                f"* **Gravedad del exceso:** Requiere una disipación de emergencia de **+{exceso_energia:,} MWh** para estabilizar el núcleo y evitar una fusión nuclear masiva."
+            )
