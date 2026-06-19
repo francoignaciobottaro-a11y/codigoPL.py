@@ -16,6 +16,22 @@ st.markdown(
 )
 st.write("")
 
+# --- DOCUMENTACIÓN DEL SISTEMA (¿PARA QUÉ SERVE Y QUÉ RESUELVE?) ---
+with st.expander("📖 Información del Sistema: ¿Para qué sirve y qué problema resuelve?", expanded=False):
+    st.markdown("""
+    ### 🎯 ¿Para qué sirve este software?
+    Este simulador interactivo sirve como una **herramienta de soporte para la toma de decisiones estratégicas y mitigación de riesgos** en entornos de ingeniería nuclear. 
+    Permite a ingenieros, operadores y estudiantes modelar de forma 100% segura el comportamiento del núcleo de un reactor antes de cualquier ejecución física. Su utilidad principal es evaluar escenarios hipotéticos (*"What-if"*), analizar la viabilidad de combustibles alternativos y prevenir catástrofes operativas mediante la detección matemática temprana de sobrecargas térmicas o saturación de depósitos radiactivos.
+
+    ### 🧠 El problema que resuelve
+    En la gestión de plantas de energía, la selección del combustible óptimo representa un problema de **optimización multiobjetivo bajo restricciones críticas**. Los operadores deben maximizar la producción energética sin comprometer la seguridad. 
+    
+    Este sistema resuelve el desafío de evaluar simultáneamente tres variables limitantes:
+    1. **Capacidad del Reactor (Límite Físico):** La masa máxima en kilogramos que tolera el diseño de cada núcleo.
+    2. **Restricción Ambiental (Límite de Residuos):** El tope estricto de subproductos radiactivos que la planta puede procesar por ciclo.
+    3. **Seguridad Térmica (Umbral de Fallo):** La energía máxima que el sistema de refrigeración puede contener antes de sufrir un colapso o fallo crítico.
+    """)
+
 # --- PANEL LATERAL (RESTRICCIONES GLOBALES) ---
 st.sidebar.header("⚙️ Restricciones del Sistema")
 umbral_fallo = st.sidebar.number_input(
