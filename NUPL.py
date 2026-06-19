@@ -11,6 +11,8 @@ st.set_page_config(
 # --- INICIALIZACIÓN DEL ESTADO DEL REACTOR ---
 if "reactor_scram" not in st.session_state:
     st.session_state.reactor_scram = False
+if "scram_requested" not in st.session_state:
+    st.session_state.scram_requested = False
 
 # --- ESTILO Y ENCABEZADO ---
 st.title("⚛️ Centro de Evaluación de Combustibles Nucleares")
@@ -36,37 +38,48 @@ with st.expander("📖 Información del Sistema: ¿Para qué sirve y qué proble
     3. **Seguridad Térmica (Umbral de Fallo):** La energía máxima que el sistema de refrigeración puede contener antes de sufrir un colapso o fallo crítico.
     """)
 
-# --- SECCIÓN DE CONTROL DE EMERGENCIA (SCRAM) ---
+# --- SECCIÓN DE CONTROL DE EMERGENCIA (SCRAM Y CONFIRMACIÓN) ---
 st.error("🚨 **SISTEMA DE CONTENCIÓN DE EMERGENCIA**")
-col_btn1, col_btn2 = st.columns([2, 5])
 
-with col_btn1:
-    if not st.session_state.reactor_scram:
-        if st.button("🔴 BOTÓN DE PARADA DE EMERGENCIA (SCRAM)", use_container_width=True, type="primary"):
-            st.session_state.reactor_scram = True
-            st.rerun()
-    else:
-        if st.button("🔄 REINICIAR Y REENFOCAR NÚCLEO", use_container_width=True):
-            st.session_state.reactor_scram = False
-            st.rerun()
-
-with col_btn2:
-    if st.session_state.reactor_scram:
-        st.markdown("⚠️ **EL REACTOR SE ENCUENTRA APAGADO FORZOSAMENTE.** Las barras de control de neutrones se insertaron por completo.")
-    else:
-        st.markdown("🟢 **EL REACTOR OPERA NORMALMENTE.** El botón SCRAM cortará la fisión inmediatamente en caso de anomalía irreversible.")
-
-# --- CARTEL DE PELIGROS DE DETENER EL REACTOR ---
+# Caso 1: El reactor ya fue apagado
 if st.session_state.reactor_scram:
+    st.markdown("⚠️ **EL REACTOR SE ENCUENTRA APAGADO FORZOSAMENTE.** Las barras de control de neutrones se insertaron por completo.")
+    if st.button("🔄 REINICIAR Y REENFOCAR NÚCLEO", use_container_width=True):
+        st.session_state.reactor_scram = False
+        st.rerun()
+
+# Caso 2: El usuario inició el protocolo pero debe confirmar leyendo los peligros primero
+elif st.session_state.scram_requested:
     with st.container(border=True):
         st.markdown("### ☢️⚠️ Peligros Críticos de Detener el Reactor (SCRAM)")
         st.markdown("""
         Apagar un reactor nuclear de forma abrupta mediante un protocolo SCRAM introduce **riesgos térmicos y químicos extremos** que el equipo de ingeniería debe gestionar bajo estricto control:
         
         * **1. Calor de Decaimiento (Decay Heat):** Aunque la fisión en cadena se detenga al 0%, los materiales radiactivos acumulados dentro del combustible siguen descomponiéndose y **generando un calor masivo residual**. Si las bombas de refrigeración de emergencia fallan tras el apagado, el núcleo se derretirá por completo (el escenario exacto que causó el desastre de **Fukushima**).
-        * **2. Envenenamiento por Xenón (Poison Pit):** Al detenerse el flujo de neutrones, el reactor comienza a acumular cantidades críticas de **Xenón-135**, un Isótopo que devora neutrones. Esto "envenena" el reactor de tal forma que vuelve **matemáticamente imposible reiniciar el sistema** durante las siguientes 48 a 72 horas, dejando a la red eléctrica sin suministro.
+        * **2. Envenenamiento por Xenón (Poison Pit):** Al detenerse el flujo de neutrones, el reactor comienza a acumular cantidades críticas de **Xenón-135**, un isótopo que devora neutrones. Esto 'envenena' el reactor de tal forma que vuelve **matemáticamente imposible reiniciar el sistema** durante las siguientes 48 a 72 horas, dejando a la red eléctrica sin suministro.
         * **3. Choque y Estrés Térmico Estructural:** Pasar de miles de grados Celsius a temperaturas frías de contención en pocos segundos contrae violentamente el acero de la vasija de presión. Este choque térmico severo puede inducir **microfisuras y fracturas estructurales catastróficas** en las tuberías primarias del refrigerante.
         """)
+        
+        st.warning("🖥️ **PANTALLA DE CONTROL:** ¿Está completamente seguro de proceder con la parada forzada del núcleo?")
+        
+        col_yes, col_no = st.columns(2)
+        with col_yes:
+            if st.button("🛑 SÍ, ENCLAVAR BARRAS (PROCEDER)", type="primary", use_container_width=True):
+                st.session_state.reactor_scram = True
+                st.session_state.scram_requested = False
+                st.rerun()
+        with col_no:
+            if st.button("🟢 NO, ABORTAR Y MANTENER REACCIÓN", use_container_width=True):
+                st.session_state.scram_requested = False
+                st.rerun()
+
+# Caso 3: Estado operativo normal (reactor encendido)
+else:
+    st.markdown("🟢 **EL REACTOR OPERA NORMALMENTE.** El botón SCRAM cortará la fisión inmediatamente en caso de anomalía irreversible.")
+    if st.button("🔴 INICIAR PROTOCOLO DE PARADA DE EMERGENCIA (SCRAM)", use_container_width=True, type="primary"):
+        st.session_state.scram_requested = True
+        st.rerun()
+
 
 # --- PANEL LATERAL (RESTRICCIONES GLOBALES) ---
 st.sidebar.header("⚙️ Restricciones del Sistema")
