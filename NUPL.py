@@ -74,4 +74,76 @@ for i, fuel in enumerate(combustibles):
                 st.error(f"💥 **FALLO CRÍTICO: SOBRECARGA**\n\nGenerando **{energia_generada:,} MWh** (Excede el umbral por {exceso:,} MWh). Reduzca la masa o la energía por kg.")
                 estado = "💥 FALLO CRÍTICO"
             else:
+                st.success(f"🟢 **SISTEMA ESTABLE**\n\nGeneración segura a {energia_generada:,} MWh.")
+                estado = "🟢 OPERATIVO"
+
+            # Guardamos los datos para los gráficos y tablas posteriores
+            resultados_evaluacion.append({
+                "Combustible": fuel,
+                "Masa Utilizada": f"{kg_usados} / {l} kg",
+                "Residuos Puros": residuos_generados,
+                "Energía Pura": energia_generada,
+                "Estado": estado,
+                "_fiable": es_fiable,
+                "_kg_usados": kg_usados,
+                "_capacidad": l
+            })
+
+# --- VISUALIZACIÓN DE RESULTADOS Y GRÁFICOS ---
+st.write("")
+st.subheader("📊 2. Análisis de Rendimiento y Seguridad")
+
+col_tabla, col_grafico = st.columns([5, 4], gap="large")
+
+with col_tabla:
+    df_resultados = pd.DataFrame(resultados_evaluacion)
+    
+    # Renderizado estético de la tabla usando column_config
+    st.dataframe(
+        df_resultados[["Combustible", "Masa Utilizada", "Residuos Puros", "Energía Pura", "Estado"]],
+        column_config={
+            "Combustible": st.column_config.TextColumn("Material"),
+            "Masa Utilizada": st.column_config.TextColumn("Carga (Usado/Máx)"),
+            "Residuos Puros": st.column_config.ProgressColumn(
+                "Residuos Generados",
+                format="%d kg",
+                min_value=0,
+                max_value=limite_residuos
+            ),
+            "Energía Pura": st.column_config.NumberColumn(
+                "Energía Neta",
+                format="%d MWh"
+            ),
+            "Estado": st.column_config.TextColumn("Diagnóstico")
+        },
+        use_container_width=True,
+        hide_index=True
+    )
+
+with col_grafico:
+    # Preparación de datos rápida para el gráfico nativo
+    df_chart = pd.DataFrame({
+        "Combustible": combustibles,
+        "Energía (MWh)": [r["Energía Pura"] for r in resultados_evaluacion]
+    }).set_index("Combustible")
+    
+    st.bar_chart(df_chart, y="Energía (MWh)", color="#4A90E2", use_container_width=True)
+
+# --- PANEL DE CONCLUSIÓN ---
+st.write("")
+st.subheader("🏆 3. Conclusión Estratégica")
+
+candidatos_fiables = [r for r in resultados_evaluacion if r["_fiable"]]
+
+if candidatos_fiables:
+    mejor = max(candidatos_fiables, key=lambda x: x["Energía Pura"])
+    
+    with st.container(border=True):
+        st.success(f"### El combustible más eficiente y seguro es el **{mejor['Combustible']}**")
+        
+        m_col1, m_col2, m_col3 = st.columns(3)
+        m_col1.metric("Energía Desplegada", f"{mejor['Energía Pura']:,} MWh")
+        m_col2.metric("Masa Requerida", f"{mejor['_kg_usados']} kg", f"Límite: {mejor['_capacidad']} kg", delta_color="inverse")
+        m_col3.metric("Residuos Generados", f"{mejor['Residuos Puros']} kg", f"Máx: {limite_residuos} kg", delta_color="inverse")
+else:
     st.error("🚨 **ALERTA CRÍTICA DEL REACTOR:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de colapso o superan las restricciones.")
