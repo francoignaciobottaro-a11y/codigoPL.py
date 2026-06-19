@@ -1,0 +1,53 @@
+import numpy as np
+from scipy.optimize import milp, LinearConstraint, Bounds
+
+# --- DATOS ---
+nombres = ["Uranio Enriquecido", "MOX", "Torio"]
+energia_por_kg = [8000, 11000, 12000]
+residuos_por_kg = [12, 13, 18]
+limite_fisico = [30, 40, 50] # KG Máximos por diseño
+umbral_fallo = 410000
+
+print("." * 80)
+print(f"{'COMBUSTIBLE':<20} | {'KG USADOS':<10} | {'RESIDUOS':<10} | {'ENERGÍA MWh':<12} | {'ESTADO'}")
+print("." * 80)
+
+resultados_evaluacion = []
+
+for i in range(3):
+    # Cálculo de capacidad máxima según residuos (500kg límite)
+    max_por_residuos = 500 // residuos_por_kg[i]
+    kg_usados = min(limite_fisico[i], max_por_residuos)
+
+    energia_generada = kg_usados * energia_por_kg[i]
+    residuos_generados = kg_usados * residuos_por_kg[i]
+
+    # Verificación de fallo crítico
+    es_fiable = energia_generada <= umbral_fallo
+    estado = "OPERATIVO" if es_fiable else "FALLO CRÍTICO"
+
+    resultados_evaluacion.append({
+        "nombre": nombres[i],
+        "energia": energia_generada,
+        "kg": kg_usados,
+        "capacidad_diseno": limite_fisico[i],
+        "fiable": es_fiable,
+        "estado": estado
+    })
+
+    print(f"{nombres[i]:<20} | {kg_usados:<3}/{limite_fisico[i]:<6} | {residuos_generados:<3}/500kg | {energia_generada:<8,.0f} | {estado}")
+
+# Filtrar solo los fiables
+candidatos_fiables = [r for r in resultados_evaluacion if r["fiable"]]
+
+print("\n" + "." * 80)
+print("<CONCLUSIÓN DEL SISTEMA>")
+print("." * 80)
+
+if candidatos_fiables:
+    mejor = max(candidatos_fiables, key=lambda x: x["energia"])
+    print(f"El combustible más óptimo y seguro es: ** {mejor['nombre']} **")
+    print(f"Utilizando {mejor['kg']} kg de una capacidad máxima de {mejor['capacidad_diseno']} kg.")
+    print(f"Energía Final: {mejor['energia']:,.0f} MWh.")
+else:
+    print("ALERTA: Ningún combustible es seguro bajo los parámetros actuales.")
