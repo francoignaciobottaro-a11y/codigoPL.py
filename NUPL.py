@@ -87,8 +87,8 @@ for i, fuel in enumerate(combustibles):
             # --- FEEDBACK ESTÉTICO INSTANTÁNEO ---
             if not es_fiable:
                 exceso = energia_generada - umbral_fallo
-                st.error(f"☢️ **FALLO CRÍTICO: SOBRECARGA**\n\nGenerando **{energia_generada:,} MWh** (Excede el umbral por {exceso:,} MWh). Reduzca la masa o la energía por kg.")
-                estado = "☢️ FALLO CRÍTICO"
+                st.error(f"☣️ **FALLO CRÍTICO: PELIGRO BIOLÓGICO**\n\nGenerando **{energia_generada:,} MWh** (Excede el umbral por {exceso:,} MWh). Reduzca la masa o la energía por kg.")
+                estado = "☣️ FALLO CRÍTICO"
             else:
                 st.success(f"🟢 **SISTEMA ESTABLE**\n\nGeneración segura a {energia_generada:,} MWh.")
                 estado = "🟢 OPERATIVO"
@@ -163,18 +163,18 @@ if candidatos_fiables:
         m_col2.metric("Masa Requerida", f"{mejor['_kg_usados']} kg", f"Límite: {mejor['_capacidad']} kg", delta_color="inverse")
         m_col3.metric("Residuos Generados", f"{mejor['Residuos Puros']} kg", f"Máx: {limite_residuos} kg", delta_color="inverse")
 else:
-    st.error("☢️🚨 **ALERTA CRÍTICA DEL REACTOR:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de colapso o superan las restricciones.")
+    st.error("☣️🚨 **ALERTA MÁXIMA DE CONTENCIÓN:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de riesgo biológico crítico.")
 
-# --- NUEVA SECCIÓN: REPORTE DETALLADO DE FALLOS ---
+# --- SECCIÓN: REPORTE DETALLADO DE FALLOS ---
 if candidatos_fallo:
     st.write("")
-    st.markdown("### ⚠️ Reporte de Inestabilidad y Riesgo Nuclear")
+    st.markdown("### ⚠️ Reporte de Inestabilidad y Riesgo Biológico")
     
     # Iteramos sobre cada material que falló para explicar las causas
     for material in candidatos_fallo:
         exceso_energia = material["Energía Pura"] - umbral_fallo
         st.warning(
-            f"☢️ **{material['Combustible']}** ha provocado un **Fallo Crítico por Sobrecarga**.\n\n"
+            f"☣️ **{material['Combustible']}** ha provocado un **Fallo Crítico por Contaminación/Sobrecarga**.\n\n"
             f"* **Causa técnica:** La energía proyectada de **{material['Energía Pura']:,} MWh** excede el umbral de seguridad térmica configurado (**{umbral_fallo:,} MWh**).\n"
-            f"* **Gravedad del exceso:** Requiere una disipación de emergencia de **+{exceso_energia:,} MWh** para estabilizar el núcleo."
+            f"* **Gravedad del exceso:** Requiere una disipación de emergencia de **+{exceso_energia:,} MWh** para estabilizar el núcleo y evitar una brecha bio-nuclear."
         )
