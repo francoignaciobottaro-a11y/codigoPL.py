@@ -138,4 +138,16 @@ st.subheader("🏆 3. Conclusión Estratégica")
 candidatos_fiables = [r for r in resultados_evaluacion if r["_fiable"]]
 
 if candidatos_fiables:
-    mejor = max(candidatos_
+    # AQUÍ ESTABA EL ERROR (Asegúrate de que esta línea esté completa):
+    mejor = max(candidatos_fiables, key=lambda x: x["Energía Pura"])
+    
+    # Tarjeta de éxito estilizada con métricas clave en paralelo
+    with st.container(border=True):
+        st.success(f"### El combustible más eficiente y seguro es el **{mejor['Combustible']}**")
+        
+        m_col1, m_col2, m_col3 = st.columns(3)
+        m_col1.metric("Energía Desplegada", f"{mejor['Energía Pura']:,} MWh")
+        m_col2.metric("Masa Requerida", f"{mejor['_kg_usados']} kg", f"Límite: {mejor['_capacidad']} kg", delta_color="inverse")
+        m_col3.metric("Residuos Generados", f"{mejor['Residuos Puros']} kg", f"Máx: {limite_residuos} kg", delta_color="inverse")
+else:
+    st.error("🚨 **ALERTA CRÍTICA del Sistema:** Ninguno de los combustibles disponibles cumple con los criterios de seguridad bajo la configuración actual. Reduzca los límites físicos o incremente el umbral de fallo.")
