@@ -16,7 +16,7 @@ st.markdown(
 )
 st.write("")
 
-# --- DOCUMENTACIÓN DEL SISTEMA (¿PARA QUÉ SERVE Y QUÉ RESUELVE?) ---
+# --- DOCUMENTACIÓN DEL SISTEMA ---
 with st.expander("📖 Información del Sistema: ¿Para qué sirve y qué problema resuelve?", expanded=False):
     st.markdown("""
     ### 🎯 ¿Para qué sirve este software?
@@ -87,8 +87,8 @@ for i, fuel in enumerate(combustibles):
             # --- FEEDBACK ESTÉTICO INSTANTÁNEO ---
             if not es_fiable:
                 exceso = energia_generada - umbral_fallo
-                st.error(f"💥 **FALLO CRÍTICO: SOBRECARGA**\n\nGenerando **{energia_generada:,} MWh** (Excede el umbral por {exceso:,} MWh). Reduzca la masa o la energía por kg.")
-                estado = "💥 FALLO CRÍTICO"
+                st.error(f"☢️ **FALLO CRÍTICO: SOBRECARGA**\n\nGenerando **{energia_generada:,} MWh** (Excede el umbral por {exceso:,} MWh). Reduzca la masa o la energía por kg.")
+                estado = "☢️ FALLO CRÍTICO"
             else:
                 st.success(f"🟢 **SISTEMA ESTABLE**\n\nGeneración segura a {energia_generada:,} MWh.")
                 estado = "🟢 OPERATIVO"
@@ -162,4 +162,4 @@ if candidatos_fiables:
         m_col2.metric("Masa Requerida", f"{mejor['_kg_usados']} kg", f"Límite: {mejor['_capacidad']} kg", delta_color="inverse")
         m_col3.metric("Residuos Generados", f"{mejor['Residuos Puros']} kg", f"Máx: {limite_residuos} kg", delta_color="inverse")
 else:
-    st.error("🚨 **ALERTA CRÍTICA DEL REACTOR:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de colapso o superan las restricciones.")
+    st.error("☢️🚨 **ALERTA CRÍTICA DEL REACTOR:** Ninguno de los combustibles disponibles es seguro bajo la configuración actual. Todos los materiales se encuentran en estado de colapso o superan las restricciones.")
